@@ -1,0 +1,6 @@
+#apple-game {
+    display:grid; 
+    grid-template-columns: repeat(17, 1fr);
+    height: 500px;
+    width: 750px;
+}
