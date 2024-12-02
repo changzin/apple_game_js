@@ -1,6 +1,15 @@
-#apple-game {
+/* #apple-game {
     display:grid; 
     grid-template-columns: repeat(17, 1fr);
     height: 500px;
     width: 750px;
 }
+#apple-game-canvas {
+    height: 3000px;
+    width: 3000px;
+}
+
+
+.selected{
+    background-color: red;
+} */
