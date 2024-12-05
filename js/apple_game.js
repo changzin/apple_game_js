@@ -1,3 +1,6 @@
+let drag = false;
+let startX, startY, endX, endY;
+
 window.onload = ()=>{
     const canvas = document.getElementById("apple-game");
     setCanvasAttr(canvas);
@@ -35,14 +38,13 @@ window.onload = ()=>{
         }
     }
 
-
-    
-
-
+    c.onmousedown = onmousedown;
+    c.onmouseup = onmouseup;
+    c.onmousemove = onmousemove;
+    c.onmouseout = onmouseout;
 }
 
 function drawImage(ctx, imgPath, x, y, width, height) {
-
     const img = new Image();
     img.src = imgPath;
     img.onload = () =>{
@@ -104,4 +106,63 @@ function makeMap(height, width){
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function collisionDetection(rectA, ractB){
+    let xValue = ractB.x - ( rectA.x + rectA.width );
+    let yValue = ractB.y - ( rectA.y + rectA.height );
+    if( xValue < 0 && yValue < 0 ){ // 충돌!
+        // 충돌 시 실행되는 코드
+    }
+}
+
+
+// 마우스 드래스 시작 - 종료시 그려질 사각형 지우면서 사과쳌
+function onmousedown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    drag = true;
+    startX = e.clientX;
+    startY = e.clientY;
+}
+function onmouseup(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!drag){
+        return;
+    }
+    endX = e.clientX;
+    endY = e.clientY;
+    drag = false;
+    //collapse check function
+    //checkApplesCollapse(startX, startY, endX, endY);
+}
+
+function onmousemove(me) {
+    //drag가 false 일때는 return(return 아래는 실행 안함)
+    if (!drag) {
+        return;
+    }
+    //마우스를 움직일 때마다 X좌표를 nowX에 담음
+    var nowX = me.offsetX ;
+    //마우스를 움직일 때마다 Y좌표를 nowY에 담음
+    var nowY = me.offsetY ;
+    //실질적으로 캔버스에 그림을 그리는 부분
+    canvasDraw (nowX,nowY);
+    //마우스가 움직일때마다 X좌표를 stX에 담음
+    stX = nowX;
+    //마우스가 움직일때마다 Y좌표를 stY에 담음
+    stY = nowY;
+}
+
+function onmouseout(e){
+    console.log("asdf");
+    drag = false;
+}
+
+function canvasDraw(currentX,currentY) {
+    var canvas = document.getElementById("apple-game-canvas");
+    var ctx = canvas.getContext("2d");   
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); //설정된 영역만큼 캔버스에서 지움
+    ctx.strokeRect(startX,startY,currentX-startX,currentY-startY); //시작점과 끝점의 좌표 정보로 사각형을 그려준다.
 }
