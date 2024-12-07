@@ -1,69 +1,64 @@
 let drag = false;
 let startX, startY, endX, endY;
+let canvasDrag, ctxDrag, canvasApple, ctxApple;
+let apples = [];
 
-window.onload = ()=>{
-    const canvas = document.getElementById("apple-game");
-    setCanvasAttr(canvas);
+const CONFIG = {
+    canvasWidth: 600,
+    canvasHeight: 400,
+    appleWidth: 28,
+    appleHeight: 28,
+    appleGap: 34        
+}
 
-    var c = document.getElementById("apple-game-canvas");
+window.onload = ()=>{    
+    canvasApple = document.getElementById("apple-game-background");
+    ctxApple = canvasApple.getContext("2d");    
+    canvasDrag = document.getElementById("apple-game");
+    ctxDrag = canvasDrag.getContext("2d");    
+
+    const map = makeMap(10, 17);    
+    const images = initNumberImg()
     
-    const map = makeMap(10, 17);
-    
-    const images2 = initNumberImg()
-    
-    const width = 1700;
-    const height = 1000;
     // 디스플레이 크기 설정 (css 픽셀)
-    c.style.width = `${width}px`;
-    c.style.height = `${height}px`;
+    canvasApple.style.width = `${CONFIG.canvasWidth}px`;
+    canvasApple.style.height = `${CONFIG.canvasHeight}px`;
+    canvasDrag.style.width = `${CONFIG.canvasWidth}px`;
+    canvasDrag.style.height = `${CONFIG.canvasHeight}px`;
     
     // 메모리에 실제 크기 설정 (픽셀 밀도를 고려하여 크기 조정)
-    const dpr = window.devicePixelRatio;
+    const dpr = window.devicePixelRatio;    
+    canvasApple.width =  CONFIG.canvasWidth * dpr;
+    canvasApple.height = CONFIG.canvasHeight * dpr;
+
+    canvasDrag.width =  CONFIG.canvasWidth * dpr;
+    canvasDrag.height = CONFIG.canvasHeight * dpr;
     
-    c.width =  width * dpr;
-    c.height = height * dpr;
-    
-    
-    
-    var ctx = c.getContext("2d");    
     // CSS에서 설정한 크기와 맞춰주기 위한 scale 조정
-    ctx.scale(dpr, dpr);
-
-
+    ctxApple.scale(dpr, dpr);
     for(let i = 0; i < 10; i++){
         for(let j = 0; j < 17; j++){
             const number = map[i][j] + "";            
-            // canvas.innerHTML += images2[number];
-            drawImage(ctx, images2[number], 34 * j, 34 * i, 28, 28);
+            drawImage(images[number], CONFIG.appleGap * j, CONFIG.appleGap * i, CONFIG.appleWidth, CONFIG.appleHeight);
+            // 좌표 저장
+            apples.push({
+                x: (CONFIG.appleGap) * j + CONFIG.appleWidth / 2, 
+                y: (CONFIG.appleGap) * i + CONFIG.appleHeight / 2 + 3
+            });
         }
     }
-
-    c.onmousedown = onmousedown;
-    c.onmouseup = onmouseup;
-    c.onmousemove = onmousemove;
-    c.onmouseout = onmouseout;
+    canvasDrag.onmousedown = onmousedown;
+    canvasDrag.onmouseup = onmouseup;
+    canvasDrag.onmousemove = onmousemove;
+    canvasDrag.onmouseout = onmouseout;
 }
 
-function drawImage(ctx, imgPath, x, y, width, height) {
+function drawImage(imgPath, x, y, width, height) {
     const img = new Image();
     img.src = imgPath;
     img.onload = () =>{
-        ctx.drawImage(img, x, y, width, height);
+        ctxApple.drawImage(img, x, y, width, height);
     }    
-}
-
-
-
-function setCanvasAttr(canvas){
-
-}
-
-function paintMap(map){
-    
-}
-
-function paintApple(num){
-    
 }
 
 function initNumberImg(){
@@ -78,19 +73,13 @@ function initNumberImg(){
         ["./img/8.svg", "8"],
         ["./img/9.svg", "9"]
     ];
-    
     const images = {};
-    const images2 = {};
     for(let i = 0; i < imagesInfo.length; i++){
-        const tag = `<img class="apple" src="${imagesInfo[i][0]}"/>`
         const name = imagesInfo[i][1];
-
-        images[name] = tag;
-
         img = imagesInfo[i][0];        
-        images2[name] = img;
+        images[name] = img;
     }
-    return images2;    
+    return images;    
 }
 
 function makeMap(height, width){
@@ -108,61 +97,76 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function collisionDetection(rectA, ractB){
-    let xValue = ractB.x - ( rectA.x + rectA.width );
-    let yValue = ractB.y - ( rectA.y + rectA.height );
-    if( xValue < 0 && yValue < 0 ){ // 충돌!
-        // 충돌 시 실행되는 코드
-    }
-}
-
-
 // 마우스 드래스 시작 - 종료시 그려질 사각형 지우면서 사과쳌
 function onmousedown(e) {
     e.preventDefault();
     e.stopPropagation();
     drag = true;
-    startX = e.clientX;
-    startY = e.clientY;
+
+    const scaleX = canvasDrag.width / canvasDrag.getBoundingClientRect().width; // X 축 스케일 보정
+    const scaleY = canvasDrag.height / canvasDrag.getBoundingClientRect().height; // Y 축 스케일 보정
+
+    const mouseX = (e.clientX - canvasDrag.getBoundingClientRect().left) * scaleX; // 보정된 X 좌표
+    const mouseY = (e.clientY - canvasDrag.getBoundingClientRect().top) * scaleY; // 보정된 Y 좌표
+
+    startX = mouseX;
+    startY = mouseY;    
 }
+
 function onmouseup(e) {
     e.preventDefault();
     e.stopPropagation();
     if (!drag){
         return;
     }
-    endX = e.clientX;
-    endY = e.clientY;
+    endX = e.pageX;
+    endY = e.pageY;
     drag = false;
+    ctxDrag.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
     //collapse check function
-    //checkApplesCollapse(startX, startY, endX, endY);
+    checkApples(startX, startY, endX, endY);
 }
 
-function onmousemove(me) {
+function onmousemove(e) {
     //drag가 false 일때는 return(return 아래는 실행 안함)
     if (!drag) {
         return;
     }
     //마우스를 움직일 때마다 X좌표를 nowX에 담음
-    var nowX = me.offsetX ;
     //마우스를 움직일 때마다 Y좌표를 nowY에 담음
-    var nowY = me.offsetY ;
-    //실질적으로 캔버스에 그림을 그리는 부분
-    canvasDraw (nowX,nowY);
-    //마우스가 움직일때마다 X좌표를 stX에 담음
-    stX = nowX;
-    //마우스가 움직일때마다 Y좌표를 stY에 담음
-    stY = nowY;
+
+    const scaleX = canvasDrag.width / canvasDrag.getBoundingClientRect().width; // X 축 스케일 보정
+    const scaleY = canvasDrag.height / canvasDrag.getBoundingClientRect().height; // Y 축 스케일 보정
+
+    const mouseX = (e.clientX - canvasDrag.getBoundingClientRect().left) * scaleX; // 보정된 X 좌표
+    const mouseY = (e.clientY - canvasDrag.getBoundingClientRect().top) * scaleY; // 보정된 Y 좌표
+
+    canvasDraw (mouseX, mouseY);
 }
 
 function onmouseout(e){
-    console.log("asdf");
     drag = false;
+    ctxDrag.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
 }
 
 function canvasDraw(currentX,currentY) {
-    var canvas = document.getElementById("apple-game-canvas");
-    var ctx = canvas.getContext("2d");   
-    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); //설정된 영역만큼 캔버스에서 지움
-    ctx.strokeRect(startX,startY,currentX-startX,currentY-startY); //시작점과 끝점의 좌표 정보로 사각형을 그려준다.
+    ctxDrag.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height); //설정된 영역만큼 캔버스에서 지움
+    ctxDrag.strokeRect(startX,startY,currentX-startX,currentY-startY); //시작점과 끝점의 좌표 정보로 사각형을 그려준다.
+}
+
+function checkApples(){
+    for(let i = 0; i < apples.length; i++){
+        const apple = apples[i];        
+        if (Math.min(startX, endX) <= apple.x && Math.max(startX, endX) >= apple.x
+        && Math.min(startY, endY) <= apple.y && Math.max(startY, endY) >= apple.y){
+            // 충돌처리해야함
+            console.log(apple);
+        }
+
+        /* 내일 없애야함, 점찍는코드 */
+        ctxApple.beginPath();
+        ctxApple.arc(apple.x, apple.y, 1, 0, 2*Math.PI);
+        ctxApple.fillStyle = "black";
+        ctxApple.fill();
+    }
 }

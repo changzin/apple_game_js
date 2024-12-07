@@ -7,9 +7,13 @@
     <script src="./js/apple_game.js"></script>
     <link rel="stylesheet" href="./css/apple_game.css">
 </head>
-<body>
-    <!-- <div id="apple-game"></div> -->
-
-    <canvas width='170' height='100' id ="apple-game-canvas"></canvas>
+<body>    
+    <div>
+        <canvas id ="apple-game" style="z-index: 2; position: absolute; left: 0; top: 0;">
+            캔버스가 지원되지 않는 환경입니다.
+        </canvas>
+        <canvas id ="apple-game-background" style="z-index: 1; position: absolute; left: 0; top: 0;">
+        </canvas>
+    </div>
 </body>
 </html>
