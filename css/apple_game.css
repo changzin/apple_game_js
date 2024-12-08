@@ -1,15 +1,36 @@
-/* #apple-game {
-    display:grid; 
-    grid-template-columns: repeat(17, 1fr);
-    height: 500px;
-    width: 750px;
-}
-#apple-game-canvas {
-    height: 3000px;
-    width: 3000px;
+#wrapper {
+    position: relative; 
+    margin-top: 30px;
 }
 
+#apple-game-drag {
+    z-index: 2; 
+    position: absolute; 
+    left: 50%; 
+    top: 0;  
+    transform: translateX(-50%)
+}
 
-.selected{
-    background-color: red;
-} */
+#apple-game-apple {
+    z-index: 1; 
+    position: absolute; 
+    left: 50%; 
+    top: 0; 
+    transform: translateX(-50%);
+}
+
+#apple-game-background {
+    z-index: 0; 
+    position: absolute; 
+    left: 50%; 
+    top: 0; 
+    transform: translateX(-50%);
+    background-color: bisque;
+    border-radius: 12px;
+    border: 14px solid orangered;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0px !important;
+}
