@@ -114,6 +114,7 @@ function drawApples(images) {
     }
 }
 
+// 이미지 그림
 function drawImage(imgPath, x, y, width, height) {
     const img = new Image();
     img.src = imgPath;
