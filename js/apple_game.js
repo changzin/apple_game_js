@@ -1,11 +1,7 @@
 let drag = false;
 let startX, startY, endX, endY;
 let canvasDrag, ctxDrag, canvasApple, ctxApple, canvasBackground, ctxBackground;
-let apples = [];
-let score = 0;
-let remainTime = 60000;
-let totalTime = 60000;
-let timer;
+let apples, score, prevScore, remainTime, totalTime, timer;
 
 const CONFIG = {
     appleXnum : 17,
@@ -15,39 +11,70 @@ const CONFIG = {
     appleWidth: 28,
     appleHeight: 28,
     appleGap: 34,
-    mouseOffsetX: 0,
-    mouseOffsetY: 0,    
+    remainTime: 60000,
+    totalTime: 60000    
 }
 
-function endTime() {
-    console.log("시간 완료");
+function endTime() {    
+    clearInterval(timer);        
+    ctxDrag.fillStyle = "bisque";
+    ctxDrag.fillRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
+    
+    ctxDrag.fillStyle = "rgba(255, 69, 0, 1)";
+    const scoreStr = `Your got ${score} score..`
+    const retryStr = 'click screen to Retry'
+
+    ctxDrag.font = "bold 50px malgun gothic";
+    ctxDrag.fillText(scoreStr, CONFIG.canvasWidth / 5, CONFIG.canvasHeight / 2);
+    ctxDrag.font = "bold 30px malgun gothic";
+    ctxDrag.fillText(retryStr, CONFIG.canvasWidth / 3.5, CONFIG.canvasHeight / 2 + 50);
+
+    canvasDrag.onmousedown = initSetting;
+    canvasDrag.onmouseup = null;
+    canvasDrag.onmousemove = null;
+    canvasDrag.onmouseout = null;
+}
+
+function start() {    
+    initCanvas();
+    ctxDrag.fillStyle = "bisque";
+    ctxDrag.fillRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
+    
+    ctxDrag.fillStyle = "rgba(255, 69, 0, 1)";
+    const startStr = "Click everywhere to start!"
+
+    ctxDrag.font = "bold 40px malgun gothic";
+    ctxDrag.fillText(startStr, CONFIG.canvasWidth / 7, CONFIG.canvasHeight / 2);
+
+    canvasDrag.onmousedown = initSetting;
 }
 
 //  시간 진행바 계산
 function updateProgress() {
     remainTime -= 100;
     const ratio =  remainTime / totalTime;
+    ctxApple.clearRect(CONFIG.canvasWidth-78, CONFIG.canvasHeight - 60, 50, -260);
+    ctxApple.fillStyle = "rgba(255, 69, 0, 1)";
+    ctxApple.fillRect(CONFIG.canvasWidth-72, CONFIG.canvasHeight - 60, 34, -ratio*260);
+
     
-    ctxApple.clearRect(CONFIG.canvasWidth-70, CONFIG.canvasHeight - 60, 34, -250);
-    ctxApple.strokeRect(CONFIG.canvasWidth-68, CONFIG.canvasHeight - 60, 30, -ratio*250);
+    if (score != prevScore){        
+        // 점수
+        ctxApple.font = "bold 20px malgun gothic";
+        ctxApple.fillStyle = "rgba(255, 69, 0, 1)";
+        ctxApple.clearRect(CONFIG.canvasWidth-80, 40, 50, 30);
+        ctxApple.fillText(score, CONFIG.canvasWidth-72, 60);
+        prevScore = score;
+    }
 
     // 시간 완료시 호출 콜백
     if(remainTime <= 0) {
-        clearInterval(timer);
-        endTime();
+        endTime();        
     }
 }
 
 window.onload = ()=>{    
-    initSetting(); 
-   
-    // 진행 0.1초마다 실행
-    timer = setInterval(updateProgress, 100);
-    
-    // 점수
-    ctxApple.font = "bold 20px malgun gothic";
-    ctxApple.fillStyle = "rgba(255, 69, 0, 1)";
-    ctxApple.fillText("60", CONFIG.canvasWidth-68, 60);
+    start();
 }
 
 // 이벤트 함수 연결
@@ -59,6 +86,33 @@ function setEventFunction() {
 }
 
 function initSetting(){
+    apples = [];
+    score = 0;
+    prevScore = 0;
+    remainTime = CONFIG.remainTime;
+    totalTime = CONFIG.totalTime;    
+    
+    const images = initNumberImg();  
+    
+    
+    ctxDrag.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
+    ctxApple.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
+
+    ctxApple.strokeStyle = "rgba(255, 69, 0, 1)";
+    ctxApple.strokeRect(CONFIG.canvasWidth - 80, CONFIG.canvasHeight - 50, 50, 30);
+    ctxApple.fillStyle = "rgba(255, 69, 0, 1)";
+    ctxApple.font = "small-caps bold 12px malgun gothic";
+    ctxApple.fillText("RETRY!", CONFIG.canvasWidth - 74, CONFIG.canvasHeight - 30);
+
+    makeApples(CONFIG.appleYnum, CONFIG.appleXnum);    
+    drawApples(images);
+    drawScore();
+    setEventFunction();
+
+    // 진행 0.1초마다 실행
+    timer = setInterval(updateProgress, 100);
+}
+function initCanvas(){
     canvasApple = document.getElementById("apple-game-apple");
     ctxApple = canvasApple.getContext("2d");    
     canvasDrag = document.getElementById("apple-game-drag");
@@ -66,7 +120,6 @@ function initSetting(){
     canvasBackground = document.getElementById("apple-game-background");
     ctxBackground = canvasBackground.getContext("2d");    
 
-    makeApples(CONFIG.appleYnum, CONFIG.appleXnum);    
     // 디스플레이 크기 설정 (css 픽셀)
     canvasApple.style.width = `${CONFIG.canvasWidth}px`;
     canvasApple.style.height = `${CONFIG.canvasHeight}px`;
@@ -88,30 +141,22 @@ function initSetting(){
     ctxApple.scale(dpr, dpr);
     ctxDrag.scale(dpr, dpr);
     ctxBackground.scale(dpr, dpr);
-
-    // mouse Offset 조절
-    /**
-     * canvas 내에선 상대좌표로 그림
-     * 마우스 좌표는 항상 절대좌표
-     * >> 거거를 개선하기 위한 OFFSET임
-     */    
-    CONFIG.mouseOffsetY = window.scrollY + canvasApple.getBoundingClientRect().top - CONFIG.appleHeight;
-    CONFIG.mouseOffsetX = window.scrollX + canvasApple.getBoundingClientRect().left;
-
-    const images = initNumberImg();  
-    drawApples(images);
-
-    setEventFunction();
 }
-
 // 게임 초기 모든 사과를 그림
 function drawApples(images) {
     for(let i = 0; i < CONFIG.appleYnum; i++){
         for(let j = 0; j < CONFIG.appleXnum; j++){
-            const number = apples[i][j].num + "";            
-            drawImage(images[number], CONFIG.appleGap * j + CONFIG.appleWidth, CONFIG.appleGap * i + CONFIG.appleHeight, CONFIG.appleWidth, CONFIG.appleHeight);            
+            const apple = apples[i][j]
+            const number = apple.num + "";            
+            drawImage(images[number], apple.x, apple.y, CONFIG.appleWidth, CONFIG.appleHeight);            
         }
     }
+}
+
+function drawScore(){
+    ctxApple.font = "bold 20px malgun gothic";
+    ctxApple.fillStyle = "rgba(255, 69, 0, 1)";
+    ctxApple.fillText(score, CONFIG.canvasWidth-72, 60);
 }
 
 // 이미지 그림
@@ -153,10 +198,10 @@ function makeApples(height, width){
             // 좌표 저장
             apples[i].push({
                 num: num,
-                x: (CONFIG.appleGap) * j + CONFIG.appleWidth, 
-                y: (CONFIG.appleGap) * i + CONFIG.appleHeight,
-                centerX: (CONFIG.appleGap) * j + CONFIG.appleWidth / 2 + CONFIG.appleWidth,
-                centerY: (CONFIG.appleGap) * i + CONFIG.appleHeight / 2 + 3 + CONFIG.appleHeight,
+                x: (CONFIG.appleGap * j) + CONFIG.appleWidth, 
+                y: (CONFIG.appleGap * i) + CONFIG.appleHeight + 3,
+                centerX: (CONFIG.appleGap * j) + CONFIG.appleWidth + CONFIG.appleWidth / 2,
+                centerY: (CONFIG.appleGap * i) + CONFIG.appleHeight + 3 + CONFIG.appleHeight / 2,
                 appleChecked: false
             });
         }
@@ -171,9 +216,16 @@ function getRandomInt(min, max) {
 function onmousedown(e) {
     e.preventDefault();
     e.stopPropagation();
-    drag = true;
-    startX = e.clientX - CONFIG.mouseOffsetX;    
-    startY = e.clientY - CONFIG.mouseOffsetY;
+    drag = true;    
+    startX = e.offsetX;    
+    startY = e.offsetY;
+
+
+    if (CONFIG.canvasWidth - 80 <= startX && CONFIG.canvasWidth - 80 + 50 >= startX
+            && CONFIG.canvasHeight - 50 <= startY && CONFIG.canvasHeight - 50 + 30 >= startY
+            ){
+                initSetting();
+    }
 }
 
 function onmouseup(e) {
@@ -183,8 +235,8 @@ function onmouseup(e) {
         return;
     }
     
-    endX = e.clientX - CONFIG.mouseOffsetX;
-    endY = e.clientY - CONFIG.mouseOffsetY;
+    endX = e.offsetX;    
+    endY = e.offsetY;
 
     drag = false;
     ctxDrag.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
@@ -199,8 +251,8 @@ function onmousemove(e) {
     if (drag == false) {
         return;
     }
-    const nowX = e.clientX - CONFIG.mouseOffsetX
-    const nowY = e.clientY - CONFIG.mouseOffsetY    
+    const nowX = e.offsetX;
+    const nowY = e.offsetY;
     canvasDraw(nowX, nowY);
 }
 
@@ -211,23 +263,23 @@ function onmouseout(e){
 
 function canvasDraw(currentX,currentY) {
     ctxDrag.clearRect(0, 0, ctxDrag.canvas.width, ctxDrag.canvas.height); //설정된 영역만큼 캔버스에서 지움
+    ctxDrag.strokeStyle = "red";
     ctxDrag.strokeRect(startX, startY, currentX-startX, currentY-startY); //시작점과 끝점의 좌표 정보로 사각형을 그려준다.
 }
 
 function checkSum(){
     let sum = 0;
     for(let i = 0; i < CONFIG.appleYnum; i++){
-        for(let j = 0; j < CONFIG.appleXnum; j++){
+        for(let j = 0; j < CONFIG.appleXnum; j++){            
             const apple = apples[i][j];   
             if (Math.min(startX, endX) <= apple.centerX && Math.max(startX, endX) >= apple.centerX
             && Math.min(startY, endY) <= apple.centerY && Math.max(startY, endY) >= apple.centerY
             && !apple.appleChecked){
-                console.log(apple);
                 sum += apple.num;
             }
         }
     }
-    if (sum == 10){
+    if (sum == 10){        
         return true;
     }
     else{
