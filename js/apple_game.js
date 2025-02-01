@@ -4,8 +4,8 @@ let canvasDrag, ctxDrag, canvasApple, ctxApple, canvasBackground, ctxBackground;
 let apples, score, prevScore, remainTime, totalTime, timer;
 
 const CONFIG = {
-    appleXnum : 17,
-    appleYnum : 10,
+    appleXCnt : 17,
+    appleYCnt : 10,
     canvasWidth: 700,
     canvasHeight: 400,
     appleWidth: 28,
@@ -25,9 +25,9 @@ function start() {
 
     // 첫 실행
     ctxDrag.fillStyle = "bisque";
-    ctxDrag.fillRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);    
+    ctxDrag.fillRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
     ctxDrag.fillStyle = "rgba(255, 69, 0, 1)";
-    const startStr = "Click everywhere to start!"
+    const startStr = "Click everywhere to start!";
     ctxDrag.font = "bold 40px malgun gothic";
     ctxDrag.fillText(startStr, CONFIG.canvasWidth / 7, CONFIG.canvasHeight / 2);
 
@@ -44,9 +44,6 @@ function gameStart(){
     remainTime = CONFIG.remainTime;
     totalTime = CONFIG.totalTime;    
 
-    // 이미지 불러오기
-    const images = getAppleImg();  
-    
     // 현재 캔버스 다 지우고
     ctxDrag.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
     ctxApple.clearRect(0,0,ctxDrag.canvas.width,ctxDrag.canvas.height);
@@ -59,9 +56,7 @@ function gameStart(){
     ctxApple.fillText("RETRY!", CONFIG.canvasWidth - 74, CONFIG.canvasHeight - 30);
 
     // 사과 배열 생성
-    makeApples(CONFIG.appleYnum, CONFIG.appleXnum);    
-    // 이미지 + 사과 배열로 캔버스에 그리기
-    drawApples(images);
+    makeApples(CONFIG.appleYCnt, CONFIG.appleXCnt);    
     // 점수 그려주기
     drawScore();
     // 마우스 이벤트 연결
@@ -101,13 +96,11 @@ function setCanvasAndApple(){
     ctxBackground.scale(dpr, dpr);
 }
 // 사과 그리기
-function drawApples(images) {
-    for(let i = 0; i < CONFIG.appleYnum; i++){
-        for(let j = 0; j < CONFIG.appleXnum; j++){
-            const apple = apples[i][j]
-            const number = apple.num + "";            
-            drawImage(images[number], apple.x, apple.y, CONFIG.appleWidth, CONFIG.appleHeight);            
-        }
+function drawApple(num, x, y) {
+    const img = new Image();
+    img.src = `./img/${num}.svg`;
+    img.onload = function(){
+        ctxApple.drawImage(img, x, y, CONFIG.appleWidth, CONFIG.appleHeight);
     }
 }
 // 점수 그려주기
@@ -116,57 +109,27 @@ function drawScore(){
     ctxApple.fillStyle = "rgba(255, 69, 0, 1)";
     ctxApple.fillText(score, CONFIG.canvasWidth-72, 60);
 }
-// 이미지 사과 그려주기
-function drawImage(imgPath, x, y, width, height) {
-    const img = new Image();
-    img.src = imgPath;
-    img.onload = () =>{
-        ctxApple.drawImage(img, x, y, width, height);
-    }    
-}
-// 사과 이미지 가져오기
-function getAppleImg(){
-    const imagesInfo = [
-        ["./img/1.svg", "1"],
-        ["./img/2.svg", "2"],
-        ["./img/3.svg", "3"],
-        ["./img/4.svg", "4"],
-        ["./img/5.svg", "5"],
-        ["./img/6.svg", "6"],
-        ["./img/7.svg", "7"],
-        ["./img/8.svg", "8"],
-        ["./img/9.svg", "9"]
-    ];
-    const images = {};
-    for(let i = 0; i < imagesInfo.length; i++){
-        const name = imagesInfo[i][1];
-        img = imagesInfo[i][0];        
-        images[name] = img;
-    }
-    return images;    
-}
 // 사과 배열 생성
 function makeApples(height, width){
     apples = [];
     for(let i = 0; i < height; i++){
         apples.push([])
         for(let j = 0; j < width; j++){
-            const num = getRandomInt(1, 9);
+            const num = Math.floor(Math.random() * 9 + 1);
+            const x = CONFIG.appleGap * j + 28;
+            const y = CONFIG.appleGap * i + 31;
             // 좌표 저장
             apples[i].push({
                 num: num,
-                x: (CONFIG.appleGap * j) + CONFIG.appleWidth, 
-                y: (CONFIG.appleGap * i) + CONFIG.appleHeight + 3,
+                x: x,
+                y: y,
                 centerX: (CONFIG.appleGap * j) + CONFIG.appleWidth + CONFIG.appleWidth / 2,
                 centerY: (CONFIG.appleGap * i) + CONFIG.appleHeight + 3 + CONFIG.appleHeight / 2,
                 appleChecked: false
             });
+            drawApple(num, x, y);
         }
     }
-}
-// 랜덤 숫자 가져오기
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 // 마우스 드래스 시작 - 종료시 그려질 사각형 지우면서 사과쳌
@@ -181,7 +144,7 @@ function onmousedown(e) {
     if (CONFIG.canvasWidth - 80 <= startX && CONFIG.canvasWidth - 80 + 50 >= startX
             && CONFIG.canvasHeight - 50 <= startY && CONFIG.canvasHeight - 50 + 30 >= startY
             ){
-                initSetting();
+                gameStart();
     }
 }
 
@@ -236,8 +199,8 @@ function canvasDraw(currentX,currentY) {
 // 드래그 된 사과 합 계산
 function checkSum(){
     let sum = 0;
-    for(let i = 0; i < CONFIG.appleYnum; i++){
-        for(let j = 0; j < CONFIG.appleXnum; j++){            
+    for(let i = 0; i < CONFIG.appleYCnt; i++){
+        for(let j = 0; j < CONFIG.appleXCnt; j++){            
             const apple = apples[i][j];   
             if (Math.min(startX, endX) <= apple.centerX && Math.max(startX, endX) >= apple.centerX
             && Math.min(startY, endY) <= apple.centerY && Math.max(startY, endY) >= apple.centerY
@@ -256,8 +219,8 @@ function checkSum(){
 
 // 드래그 된 사과를 지우고, 지운 사과만큼 점수 올려주기
 function clearApplesUpdateScore(){
-    for(let i = 0; i < CONFIG.appleYnum; i++){
-        for(let j = 0; j < CONFIG.appleXnum; j++){
+    for(let i = 0; i < CONFIG.appleYCnt; i++){
+        for(let j = 0; j < CONFIG.appleXCnt; j++){
             const apple = apples[i][j];   
             if (Math.min(startX, endX) <= apple.centerX && Math.max(startX, endX) >= apple.centerX
             && Math.min(startY, endY) <= apple.centerY && Math.max(startY, endY) >= apple.centerY
@@ -285,7 +248,7 @@ function endTime() {
     ctxDrag.fillText(retryStr, CONFIG.canvasWidth / 3.5, CONFIG.canvasHeight / 2 + 50);
 
     //클릭하면 재시작하도록 마우스 이벤트 세팅
-    canvasDrag.onmousedown = initSetting;
+    canvasDrag.onmousedown = gameStart;
     canvasDrag.onmouseup = null;
     canvasDrag.onmousemove = null;
     canvasDrag.onmouseout = null;
